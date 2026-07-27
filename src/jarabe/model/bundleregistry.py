@@ -33,6 +33,7 @@ from sugar3 import env
 
 from jarabe.model import desktop
 from jarabe.model import mimeregistry
+from jarabe.frame.installalert import request_install_confirmation
 
 """
 The bundle registry is a database of sorts of the trackable bundles available
@@ -502,20 +503,18 @@ class BundleRegistry(GObject.GObject):
 
     def install_async(self, bundle, callback, user_data,
                       force_downgrade=False):
-        """
-        Asynchronous version of install().
-        The result of the installation is presented to a user-defined callback
-        with the following parameters:
-          1. The bundle that passed to this method
-          2. The result of the operation (True, False, or an Exception -
-             see the install() docs)
-          3. The user_data passed to this method
-
-        The callback is always invoked from main-loop context.
-        """
-        self._install_queue.enqueue(bundle, force_downgrade,
-                                    self._bundle_installed_cb,
-                                    [callback, user_data])
+        if self.get_bundle(bundle.get_bundle_id()) is None:
+            def on_confirm():
+                self._install_queue.enqueue(bundle, force_downgrade,
+                                            self._bundle_installed_cb,
+                                            [callback, user_data])
+            def on_decline():
+                callback(bundle, False, user_data)
+            request_install_confirmation(bundle, on_confirm, on_decline)
+        else:
+            self._install_queue.enqueue(bundle, force_downgrade,
+                                        self._bundle_installed_cb,
+                                        [callback, user_data])
 
     def _bundle_installed_cb(self, bundle, result, data):
         """
