@@ -33,7 +33,6 @@ from sugar3 import env
 
 from jarabe.model import desktop
 from jarabe.model import mimeregistry
-from jarabe.frame.installalert import request_install_confirmation
 
 """
 The bundle registry is a database of sorts of the trackable bundles available
@@ -504,6 +503,7 @@ class BundleRegistry(GObject.GObject):
     def install_async(self, bundle, callback, user_data,
                       force_downgrade=False):
         if self.get_bundle(bundle.get_bundle_id()) is None:
+            from jarabe.frame.installalert import request_install_confirmation
             def on_confirm():
                 self._install_queue.enqueue(bundle, force_downgrade,
                                             self._bundle_installed_cb,
